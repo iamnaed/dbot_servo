@@ -94,6 +94,15 @@ public:
         keyboard_thread_ = std::thread{&DbotServoKeyboardPublisher::keyboard_loop, this};
     }
 
+    ~DbotServoKeyboardPublisher()
+    {        
+        // Thread
+        is_keyboard_reading_.store(false);
+        RCLCPP_INFO(this->get_logger(), "Waiting for keyboard_loop thread to finish, press any key to continue stopping");
+        keyboard_thread_.join();
+        RCLCPP_INFO(this->get_logger(), "Servo ended. . .");
+    }
+
 private:
     void publish_loop()
     {
@@ -139,7 +148,7 @@ private:
 
         geometry_msgs::msg::Vector3 lin;
 
-        while(is_keyboard_reading_.load())
+        while(true)
         {
             // get the next event from the keyboard
             try
@@ -151,6 +160,11 @@ private:
                 perror("read():");
                 return;
             }
+
+            // Guard
+            // Placed here so that no command is executed if it is already false
+            if(!is_keyboard_reading_.load())
+                break;
 
             // Use read key-press
             switch (c)
@@ -256,6 +270,7 @@ private:
             } // switch
         } // while
 
+        input_.shutdown();
         puts("Keyboard loop ended");
     }
 
