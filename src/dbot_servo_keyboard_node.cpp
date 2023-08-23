@@ -80,24 +80,22 @@ public:
 
         // Value
         joint_vel_cmd_ = 1.0;
-        joint_jog_msg_.joint_names.resize(6);
         joint_jog_msg_.joint_names = {"j0_joint", "j1_joint", "j2_joint", "j3_joint", "j4_joint", "j5_joint"};
-        joint_jog_msg_.velocities.resize(6);
         joint_jog_msg_.velocities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
         // Flags
-        is_publish_joint_.store(false);
-        is_publish_cartesian_.store(false);
+        is_publish_joint_ = false;
+        is_publish_cartesian_ = false;
         
         // Thread
-        is_keyboard_reading_.store(true);
+        is_keyboard_reading_ = true;
         keyboard_thread_ = std::thread{&DbotServoKeyboardPublisher::keyboard_loop, this};
     }
 
     ~DbotServoKeyboardPublisher()
     {        
         // Thread
-        is_keyboard_reading_.store(false);
+        is_keyboard_reading_ = false;
         RCLCPP_INFO(this->get_logger(), "Waiting for keyboard_loop thread to finish, press any key to continue stopping");
         keyboard_thread_.join();
         RCLCPP_INFO(this->get_logger(), "Servo ended. . .");
@@ -112,7 +110,7 @@ private:
         // joint_cmd_pub_->publish(msg2);
 
         // Message
-        if (is_publish_cartesian_.load())
+        if (is_publish_cartesian_)
         {
             // Publish
             auto msg = get_cartesian_jog_msg();
@@ -120,9 +118,9 @@ private:
             RCLCPP_INFO(this->get_logger(), "Publishing cartesian jogging commands. . .");
 
             // Reset
-            is_publish_cartesian_.store(false);
+            is_publish_cartesian_ = false;
         }
-        else if (is_publish_joint_.load())
+        else if (is_publish_joint_)
         {
             // Publish
             auto msg = get_joint_jog_msg();
@@ -130,15 +128,12 @@ private:
             RCLCPP_INFO(this->get_logger(), "Publishing joint jogging commands. . .");
 
             // Reset
-            is_publish_joint_.store(false);
+            is_publish_joint_ = false;
         }
     }
 
     void keyboard_loop()
     {
-        char c;
-        //std::thread{ std::bind(&KeyboardServo::spin, this) }.detach();
-
         puts("Reading from keyboard");
         puts("---------------------------");
         puts("Use arrow keys and the '.' and ';' keys to Cartesian jog");
@@ -146,11 +141,13 @@ private:
         puts("Use 1|2|3|4|5|6|7 keys to joint jog. 'R' to reverse the direction of jogging.");
         puts("'Q' to quit.");
 
+        char c;
         geometry_msgs::msg::Vector3 lin;
 
         while(true)
         {
-            // get the next event from the keyboard
+            // Get the next event from the keyboard
+            // Blocking call
             try
             {
                 input_.readOne(&c);
@@ -163,7 +160,7 @@ private:
 
             // Guard
             // Placed here so that no command is executed if it is already false
-            if(!is_keyboard_reading_.load())
+            if(!is_keyboard_reading_)
                 break;
 
             // Use read key-press
@@ -175,7 +172,7 @@ private:
                 lin.y = -1.0;
                 lin.z = 0.0;
                 set_cartesian_jog_msg(lin);
-                is_publish_cartesian_.store(true);
+                is_publish_cartesian_ = true;
                 break;
             case KEYCODE_RIGHT:
                 RCLCPP_INFO(this->get_logger(), "RIGHT");
@@ -183,7 +180,7 @@ private:
                 lin.y = 1.0;
                 lin.z = 0.0;
                 set_cartesian_jog_msg(lin);
-                is_publish_cartesian_.store(true);
+                is_publish_cartesian_ = true;
                 break;
             case KEYCODE_UP:
                 RCLCPP_INFO(this->get_logger(), "UP");
@@ -191,7 +188,7 @@ private:
                 lin.y = 0.0;
                 lin.z = 0.0;
                 set_cartesian_jog_msg(lin);
-                is_publish_cartesian_.store(true);
+                is_publish_cartesian_ = true;
                 break;
             case KEYCODE_DOWN:
                 RCLCPP_INFO(this->get_logger(), "DOWN");
@@ -199,7 +196,7 @@ private:
                 lin.y = 0.0;
                 lin.z = 0.0;
                 set_cartesian_jog_msg(lin);
-                is_publish_cartesian_.store(true);
+                is_publish_cartesian_ = true;
                 break;
             case KEYCODE_PERIOD:
                 RCLCPP_INFO(this->get_logger(), "PERIOD");
@@ -207,7 +204,7 @@ private:
                 lin.y = 0.0;
                 lin.z = -1.0;
                 set_cartesian_jog_msg(lin);
-                is_publish_cartesian_.store(true);
+                is_publish_cartesian_ = true;
                 break;
             case KEYCODE_SEMICOLON:
                 RCLCPP_INFO(this->get_logger(), "SEMI-COLON");
@@ -215,7 +212,7 @@ private:
                 lin.y = 0.0;
                 lin.z = 1.0;
                 set_cartesian_jog_msg(lin);
-                is_publish_cartesian_.store(true);
+                is_publish_cartesian_ = true;
                 break;
             case KEYCODE_E:
                 RCLCPP_INFO(this->get_logger(), "E");
@@ -228,36 +225,36 @@ private:
             case KEYCODE_1:
                 RCLCPP_INFO(this->get_logger(), "1");
                 set_joint_jog_msg(0, joint_vel_cmd_);
-                is_publish_joint_.store(true);
+                is_publish_joint_ = true;
                 break;
             case KEYCODE_2:
                 RCLCPP_INFO(this->get_logger(), "2");
                 set_joint_jog_msg(1, joint_vel_cmd_);
-                is_publish_joint_.store(true);
+                is_publish_joint_ = true;
                 break;
             case KEYCODE_3:
                 RCLCPP_INFO(this->get_logger(), "3");
                 set_joint_jog_msg(2, joint_vel_cmd_);
-                is_publish_joint_.store(true);
+                is_publish_joint_ = true;
                 break;
             case KEYCODE_4:
                 RCLCPP_INFO(this->get_logger(), "4");
                 set_joint_jog_msg(3, joint_vel_cmd_);
-                is_publish_joint_.store(true);
+                is_publish_joint_ = true;
                 break;
             case KEYCODE_5:
                 RCLCPP_INFO(this->get_logger(), "5");
                 set_joint_jog_msg(4, joint_vel_cmd_);
-                is_publish_joint_.store(true);
+                is_publish_joint_ = true;
                 break;
             case KEYCODE_6:
                 RCLCPP_INFO(this->get_logger(), "6");
                 set_joint_jog_msg(5, joint_vel_cmd_);
-                is_publish_joint_.store(true);
+                is_publish_joint_ = true;
                 break;
             case KEYCODE_7:
                 RCLCPP_INFO(this->get_logger(), "7");
-                //is_publish_joint_.store(true);
+                //is_publish_joint_ = true;
                 break;
             case KEYCODE_R:
                 RCLCPP_INFO(this->get_logger(), "R");
@@ -265,7 +262,7 @@ private:
                 break;
             case KEYCODE_Q:
                 RCLCPP_INFO(this->get_logger(), "quit");
-                is_keyboard_reading_.store(false);
+                is_keyboard_reading_ = false;
                 break;
             } // switch
         } // while
