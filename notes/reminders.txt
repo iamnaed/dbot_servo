@@ -1,0 +1,7 @@
+[1] Start dbot_servo_fake.launch.py
+
+[2] Start servo service
+    ros2 service call /servo_node/stop_servo std_srvs/srv/Trigger {}
+
+[3] Run servo keyboard
+    ros2 run dbot_servo dbot_servo_keyboard_node
