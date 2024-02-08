@@ -32,6 +32,8 @@ using namespace std::chrono_literals;
 #define KEYCODE_W 0x77
 #define KEYCODE_E 0x65
 #define KEYCODE_R 0x72
+#define KEYCODE_Z 0x7A
+#define KEYCODE_X 0x78
 
 class KeyboardReader
 {
@@ -262,6 +264,14 @@ private:
                 break;
             case KEYCODE_Q:
                 RCLCPP_INFO(this->get_logger(), "quit");
+                is_keyboard_reading_ = false;
+                break;
+            case KEYCODE_Z:
+                RCLCPP_INFO(this->get_logger(), "start servo server");
+                is_keyboard_reading_ = false;
+                break;
+            case KEYCODE_X:
+                RCLCPP_INFO(this->get_logger(), "stop servo server");
                 is_keyboard_reading_ = false;
                 break;
             } // switch
