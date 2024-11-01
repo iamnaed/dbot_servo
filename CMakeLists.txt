@@ -31,6 +31,7 @@ install(
 # Install folders
 install(
   DIRECTORY
+  config
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
